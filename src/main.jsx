@@ -4,16 +4,23 @@ import App from './App.jsx'
 import './index.css'
 
 async function enableMocking() {
-  if (process.env.NODE_ENV !== 'development') {
-    return
-  }
+  // Import the worker
   const { worker } = await import('./mocks/browser')
-  // `worker.start()` returns a Promise that resolves
-  // once the Service Worker is up and ready to intercept requests.
-  return worker.start()
+
+  // Start the worker and log success/failure
+  return worker.start({
+    onUnhandledRequest: 'bypass',
+    serviceWorker: {
+      url: '/mockServiceWorker.js',
+    },
+  }).catch(err => {
+    console.error("MSW Failed to start:", err);
+  });
 }
 
+// Initialize
 enableMocking().then(() => {
+  console.log("Mocking Enabled. Rendering App...");
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
       <App />
