@@ -1,29 +1,27 @@
 import React from 'react'
-import ReactDOM from 'react-dom/client'
+import ReactDOM from 'react-dom/client' // <--- This import was likely missing
 import App from './App.jsx'
 import './index.css'
 
-async function enableMocking() {
-  // Import the worker
-  const { worker } = await import('./mocks/browser')
+// async function enableMocking() {
+//   if (process.env.NODE_ENV !== 'development') {
+//     return
+//   }
+//   const { worker } = await import('./mocks/browser')
+//   // `worker.start()` returns a Promise that resolves
+//   // once the Service Worker is up and ready to intercept requests.
+//   return worker.start()
+// }
 
-  // Start the worker and log success/failure
-  return worker.start({
-    onUnhandledRequest: 'bypass',
-    serviceWorker: {
-      url: '/mockServiceWorker.js',
-    },
-  }).catch(err => {
-    console.error("MSW Failed to start:", err);
-  });
-}
-
-// Initialize
-enableMocking().then(() => {
-  console.log("Mocking Enabled. Rendering App...");
-  ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-  )
-})
+// enableMocking().then(() => {
+//   ReactDOM.createRoot(document.getElementById('root')).render(
+//     <React.StrictMode>
+//       <App />
+//     </React.StrictMode>, anpanman123@#$
+//   )
+// })
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)

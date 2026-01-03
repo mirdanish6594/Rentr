@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Search, Filter, Bell } from 'lucide-react';
 import InvoiceViewModal from '../components/InvoiceViewModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import API_URL from '../config';
 
 const JobManagement = ({ jobs, refreshJobs }) => {
   const [invoiceView, setInvoiceView] = useState({ open: false, job: null });
@@ -23,7 +24,7 @@ const JobManagement = ({ jobs, refreshJobs }) => {
     .filter(j => statusFilter === 'All' || j.status === statusFilter);
 
   const executePay = async () => {
-    await fetch(`/api/jobs/${confirmPay.job.id}/pay`, { method: 'POST' });
+    await fetch(`${API_URL}/api/jobs/${confirmPay.job.id}/pay`, { method: 'POST' });
     setConfirmPay({ open: false, job: null });
     refreshJobs();
   };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import API_URL from '../config';
 
 const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
       // Simulate network delay for realism
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const response = await fetch('/api/jobs', {
+      const response = await fetch('${API_URL}/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

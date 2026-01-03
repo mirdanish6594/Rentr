@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Loader2, Wrench, Clock, DollarSign } from 'lucide-react';
+import API_URL from '../config';
 
 const EditJobModal = ({ isOpen, onClose, job, onJobUpdated }) => {
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ const EditJobModal = ({ isOpen, onClose, job, onJobUpdated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await fetch(`/api/jobs/${job.id}`, {
+    await fetch(`${API_URL}/api/jobs/${job.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)

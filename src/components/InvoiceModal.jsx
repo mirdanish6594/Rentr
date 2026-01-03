@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, FileCheck } from 'lucide-react';
+import API_URL from '../config';
 
 const InvoiceModal = ({ isOpen, onClose, job, onSubmit }) => {
   const [amount, setAmount] = useState(job?.budget || '');

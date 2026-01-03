@@ -12,6 +12,7 @@ import ApplicationModal from './components/ApplicationModal';
 import InvoiceModal from './components/InvoiceModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import InvoiceViewModal from './components/InvoiceViewModal';
+import API_URL from '../config';
 
 const getJobIcon = (type) => {
   switch(type) {
@@ -44,7 +45,7 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
 
   const executeAssign = async () => {
     const { job, applicant } = confirmAssign;
-    await fetch(`/api/jobs/${job.id}/assign`, {
+    await fetch(`${API_URL}/api/jobs/${job.id}/assign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ applicantId: applicant.id, contractorName: applicant.name })
@@ -226,7 +227,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   const { user } = useAuth();
 
   const submitApplication = async (jobId, data) => {
-    await fetch(`/api/jobs/${jobId}/apply`, { 
+    await fetch(`${API_URL}/api/jobs/${jobId}/apply`, { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, contractorName: user.name }) 
@@ -239,7 +240,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   const executeStatusUpdate = async () => {
     const { job, type } = confirmAction;
     const newStatus = type === 'start' ? 'In Progress' : 'Completed';
-    await fetch(`/api/jobs/${job.id}/status`, { 
+    await fetch(`${API_URL}/api/jobs/${job.id}/status`, { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }) 
@@ -249,7 +250,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   };
 
   const submitInvoice = async (jobId, data) => {
-    await fetch(`/api/jobs/${jobId}/invoice`, { 
+    await fetch(`${API_URL}/api/jobs/${jobId}/invoice`, { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data) 
@@ -406,7 +407,7 @@ const DashboardLayout = ({ children }) => {
 
 function App() {
   const [jobs, setJobs] = useState([]);
-  const fetchJobs = () => { fetch('/api/jobs').then(res => res.json()).then(setJobs); };
+  const fetchJobs = () => { fetch('${API_URL}/api/jobs').then(res => res.json()).then(setJobs); };
   
   useEffect(() => { 
     fetchJobs(); 

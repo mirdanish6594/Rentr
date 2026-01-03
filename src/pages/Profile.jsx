@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Briefcase, ArrowLeft, Mail, Phone, ShieldCheck, MapPin } from 'lucide-react';
+import API_URL from '../config';
 
 const Profile = () => {
   const { id } = useParams();
@@ -9,10 +10,30 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/contractors/${id}`)
-      .then(res => res.json())
+    // Default to ID 101 if none provided
+    const contractorId = id || 101; 
+
+    fetch(`${API_URL}/api/contractors/${contractorId}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Profile not found");
+        return res.json();
+      })
       .then(data => {
-        setProfile(data);
+        // --- DATA ADAPTER ---
+        // We transform the backend data to match this specific UI's needs
+        const adaptedProfile = {
+          ...data,
+          // Map 'completed_jobs' (backend) to 'jobsCompleted' (frontend UI)
+          jobsCompleted: data.completed_jobs || 0,
+          // Ensure 'history' exists so the map function doesn't crash
+          history: data.history || [] 
+        };
+        
+        setProfile(adaptedProfile);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error loading profile:", err);
         setLoading(false);
       });
   }, [id]);
@@ -25,6 +46,8 @@ const Profile = () => {
       </div>
     </div>
   );
+
+  if (!profile) return <div className="p-10 text-center">Profile not found</div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12 animate-fade-in">
@@ -52,7 +75,7 @@ const Profile = () => {
             <div className="flex items-end gap-6">
               {/* Avatar with Gold Border */}
               <div className="w-36 h-36 rounded-full border-[6px] border-white bg-slate-100 flex items-center justify-center text-5xl font-bold text-rentr-dark shadow-lg">
-                {profile.name.charAt(0)}
+                {profile.name ? profile.name.charAt(0) : 'U'}
               </div>
               <div className="mb-2">
                 <h1 className="text-4xl font-bold text-rentr-dark tracking-tight">{profile.name}</h1>
@@ -76,6 +99,7 @@ const Profile = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-100 pt-8">
             <div className="flex flex-col items-center justify-center p-4 bg-rentr-light/50 rounded-2xl hover:bg-rentr-light transition-colors duration-300">
+              {/* Updated to use the variable we mapped in useEffect */}
               <div className="text-3xl font-bold text-rentr-dark">{profile.jobsCompleted}</div>
               <div className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">Jobs Completed</div>
             </div>
@@ -126,6 +150,7 @@ const Profile = () => {
           <div className="bg-white p-8 rounded-3xl shadow-lg shadow-slate-200/40 border border-slate-100 h-full">
             <h3 className="font-bold text-rentr-dark mb-6 text-lg">Recent Work History</h3>
             <div className="space-y-4">
+              {/* Safely map over history even if it's empty */}
               {profile.history.map((job, idx) => (
                 <div 
                   key={idx} 
@@ -148,6 +173,7 @@ const Profile = () => {
                   </div>
                 </div>
               ))}
+              {/* This message will appear since history is empty in the backend currently */}
               {profile.history.length === 0 && (
                 <div className="text-center py-12 bg-rentr-light/30 rounded-2xl border-2 border-dashed border-slate-200">
                   <p className="text-slate-400">No work history available yet.</p>

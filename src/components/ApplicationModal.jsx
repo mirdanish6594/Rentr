@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import API_URL from '../config';
 
 const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
   const [proposal, setProposal] = useState('');
