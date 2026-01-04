@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 
 # --- Applicant ---
 class ApplicantBase(BaseModel):
@@ -14,8 +14,10 @@ class ApplicantCreate(ApplicantBase):
 class Applicant(ApplicantBase):
     id: int
     job_id: int
+    contractor_id: Optional[int] = 101 # Allow this field to be read
+
     class Config:
-        orm_mode = True
+        orm_mode = True  # Or 'from_attributes = True' if you see Pydantic V2 warnings
 
 # --- Invoice ---
 class InvoiceBase(BaseModel):

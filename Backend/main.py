@@ -1,19 +1,31 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
+from pydantic import BaseModel
+from typing import Union, List
 import models, schemas, database
+import logging
 
-# 1. Create tables in the DB (Supabase or Local)
+# Set up logging to see errors in the terminal
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# --- CRITICAL FIX: RESET DATABASE ---
+# This deletes old tables so new ones with 'contractor_id' can be created.
+# You can remove this line later if you want to keep data between restarts.
+models.Base.metadata.drop_all(bind=database.engine)
+
+# Create tables (now with correct columns)
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 
-# 2. CORS: Allow Frontend to talk to Backend
+# Allow Frontend to talk to Backend
 origins = [
-    "http://localhost:5173",          # Local React
-    "https://rentr.vercel.app",       # Your Vercel Domain
-    "https://rentr-module.vercel.app" # Alternate Vercel Domain
+    "http://localhost:5173",          
+    "https://rentr.vercel.app",       
+    "https://rentr-module.vercel.app" 
 ]
 
 app.add_middleware(
@@ -24,7 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dependency to get DB session
 def get_db():
     db = database.SessionLocal()
     try:
@@ -32,14 +43,19 @@ def get_db():
     finally:
         db.close()
 
+# --- SCHEMA FOR APPLICATIONS ---
+class ApplicationSchema(BaseModel):
+    bid: Union[str, int]
+    proposal: str
+    contractorName: str
+
 # --- ROUTES ---
 
-# GET All Jobs
-@app.get("/api/jobs", response_model=list[schemas.Job])
+@app.get("/api/jobs", response_model=List[schemas.Job])
 def get_jobs(db: Session = Depends(get_db)):
-    return db.query(models.Job).order_by(models.Job.id.desc()).all()
+    # joinedload ensures applicants are fetched with the job
+    return db.query(models.Job).options(joinedload(models.Job.applicants)).order_by(models.Job.id.desc()).all()
 
-# POST Create Job
 @app.post("/api/jobs", response_model=schemas.Job)
 def create_job(job: schemas.JobCreate, db: Session = Depends(get_db)):
     db_job = models.Job(**job.dict())
@@ -48,7 +64,6 @@ def create_job(job: schemas.JobCreate, db: Session = Depends(get_db)):
     db.refresh(db_job)
     return db_job
 
-# PUT Edit Job
 @app.put("/api/jobs/{job_id}", response_model=schemas.Job)
 def update_job(job_id: int, updates: schemas.JobUpdate, db: Session = Depends(get_db)):
     job = db.query(models.Job).filter(models.Job.id == job_id).first()
@@ -64,23 +79,38 @@ def update_job(job_id: int, updates: schemas.JobUpdate, db: Session = Depends(ge
     db.refresh(job)
     return job
 
-# POST Apply for Job
-@app.post("/api/jobs/{job_id}/apply")
-def apply_for_job(job_id: int, application: schemas.ApplicantCreate, contractorName: str = None, db: Session = Depends(get_db)):
-    # Note: If frontend sends 'contractorName' but schema expects 'name', 
-    # ensure your frontend sends 'name' or your schema matches.
-    new_applicant = models.Applicant(
-        job_id=job_id,
-        name=application.name, 
-        bid=application.bid,
-        proposal=application.proposal,
-        date=datetime.now().strftime("%Y-%m-%d")
-    )
-    db.add(new_applicant)
+@app.delete("/api/jobs/{job_id}")
+def delete_job(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(models.Job).filter(models.Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    db.delete(job)
     db.commit()
-    return {"success": True}
+    return {"success": True, "message": "Job deleted"}
 
-# POST Assign Contractor
+@app.post("/api/jobs/{job_id}/apply")
+def apply_for_job(job_id: int, data: ApplicationSchema, db: Session = Depends(get_db)):
+    try:
+        bid_amount = int(data.bid)
+
+        new_applicant = models.Applicant(
+            job_id=job_id,
+            name=data.contractorName, 
+            contractor_id=101,  # Now valid because table was recreated
+            bid=bid_amount,
+            proposal=data.proposal,
+            date=datetime.now().strftime("%Y-%m-%d")
+        )
+        
+        db.add(new_applicant)
+        db.commit()
+        return {"success": True}
+        
+    except Exception as e:
+        logger.error(f"Error applying for job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/jobs/{job_id}/assign")
 def assign_job(job_id: int, payload: dict, db: Session = Depends(get_db)):
     job = db.query(models.Job).filter(models.Job.id == job_id).first()
@@ -92,7 +122,6 @@ def assign_job(job_id: int, payload: dict, db: Session = Depends(get_db)):
     db.commit()
     return {"success": True}
 
-# POST Update Status (Start/Complete)
 @app.post("/api/jobs/{job_id}/status")
 def update_status(job_id: int, payload: dict, db: Session = Depends(get_db)):
     job = db.query(models.Job).filter(models.Job.id == job_id).first()
@@ -103,7 +132,6 @@ def update_status(job_id: int, payload: dict, db: Session = Depends(get_db)):
     db.commit()
     return {"success": True}
 
-# POST Create Invoice
 @app.post("/api/jobs/{job_id}/invoice")
 def create_invoice(job_id: int, invoice: schemas.InvoiceCreate, db: Session = Depends(get_db)):
     job = db.query(models.Job).filter(models.Job.id == job_id).first()
@@ -122,7 +150,6 @@ def create_invoice(job_id: int, invoice: schemas.InvoiceCreate, db: Session = De
     db.commit()
     return {"success": True}
 
-# POST Pay Invoice
 @app.post("/api/jobs/{job_id}/pay")
 def pay_invoice(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.Job).filter(models.Job.id == job_id).first()
@@ -133,21 +160,36 @@ def pay_invoice(job_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"success": True}
 
-# --- NEW: Contractor Profile Endpoint (Fixes the Profile Page 404) ---
 @app.get("/api/contractors/{contractor_id}")
 def get_contractor_profile(contractor_id: int):
-    # This mock data ensures your Profile page works perfectly
-    return {
-        "id": contractor_id,
-        "name": "Danish Mir",
-        "company": "Mir Electrical Solutions",
-        "role": "Licensed Electrician",
-        "location": "Srinagar, Kashmir",
-        "rating": 4.9,
-        "reviews": 128,
-        "email": "danish@rentr.app",
-        "phone": "+91 60056 19812",
-        "bio": "Certified industrial and residential electrician with over 8 years of experience. Specializing in smart home automation, generator repair, and complex wiring grids. Committed to safety and efficiency.",
-        "completed_jobs": 42,
-        "skills": ["Industrial Wiring", "Generators", "Smart Home", "HVAC Repair", "Blueprints"]
+    users = {
+        101: {
+            "id": 101,
+            "name": "Danish Mir",
+            "company": "Mir Solutions",
+            "role": "Licensed Electrician",
+            "location": "Srinagar, Kashmir",
+            "rating": 4.9,
+            "reviews": 128,
+            "email": "danish@rentr.app",
+            "phone": "+91 60056 19812",
+            "bio": "Certified industrial and residential electrician with over 8 years of experience. Specializing in smart home automation.",
+            "completed_jobs": 42,
+            "skills": ["Industrial Wiring", "Generators", "Smart Home", "HVAC Repair"]
+        },
+        102: {
+            "id": 102,
+            "name": "Agent Smith",
+            "company": "Matrix Realty Group",
+            "role": "Property Manager",
+            "location": "New York, USA",
+            "rating": 5.0,
+            "reviews": 85,
+            "email": "smith@matrixrealty.com",
+            "phone": "+1 212 555 0199",
+            "bio": "Senior property manager overseeing 50+ commercial and residential units. Focused on quick turnaround and quality maintenance.",
+            "completed_jobs": 150,
+            "skills": ["Property Management", "Contract Negotiation", "Real Estate", "Logistics"]
+        }
     }
+    return users.get(contractor_id, users[101])

@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LayoutDashboard, LogOut, Plus, Users, CheckCircle, Play, DollarSign, Clock, Wrench, Zap, Hammer, Wind, AlertCircle, FileText, User, Edit, Search, Filter, Briefcase, Bell } from 'lucide-react';
+import { LayoutDashboard, LogOut, Plus, Users, CheckCircle, Play, DollarSign, Clock, Wrench, Zap, Hammer, Wind, AlertCircle, FileText, User, Edit, Search, Filter, Briefcase, Bell, Trash2 } from 'lucide-react';
 import logo from './assets/logo.png';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
-import JobManagement from './pages/JobManagement'; // <--- UPDATED IMPORT
+import JobManagement from './pages/JobManagement'; 
 import CreateJobModal from './components/CreateJobModal';
 import EditJobModal from './components/EditJobModal'; 
 import ApplicationModal from './components/ApplicationModal';
 import InvoiceModal from './components/InvoiceModal';
 import ConfirmationModal from './components/ConfirmationModal';
-import InvoiceViewModal from './components/InvoiceViewModal';
-import API_URL from '../config';
+import API_URL from './config';
 
 const getJobIcon = (type) => {
   switch(type) {
@@ -26,21 +25,22 @@ const getJobIcon = (type) => {
 
 // --- AGENT DASHBOARD ---
 const AgentDashboard = ({ jobs, refreshJobs }) => {
+  const { user } = useAuth();
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isEditOpen, setEditOpen] = useState({ open: false, job: null }); 
   const [selectedJob, setSelectedJob] = useState(null); 
+  
   const [confirmAssign, setConfirmAssign] = useState({ open: false, job: null, applicant: null });
+  const [deleteModal, setDeleteModal] = useState({ open: false, jobId: null });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('All');
 
-  // Filter Logic
   const openJobs = jobs.filter(j => j.status === 'Open')
     .filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()))
     .filter(j => filterType === 'All' || j.type === filterType);
 
-  // Stats for Banner
-  const totalApplicants = openJobs.reduce((acc, job) => acc + job.applicants.length, 0);
+  const totalApplicants = openJobs.reduce((acc, job) => acc + (job.applicants ? job.applicants.length : 0), 0);
   const pendingInvoices = jobs.filter(j => j.status === 'Invoiced').length;
 
   const executeAssign = async () => {
@@ -54,19 +54,31 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
     refreshJobs();
   };
 
+  const executeDelete = async () => {
+    if (!deleteModal.jobId) return;
+    try {
+      await fetch(`${API_URL}/api/jobs/${deleteModal.jobId}`, {
+        method: 'DELETE',
+      });
+      refreshJobs();
+      setDeleteModal({ open: false, jobId: null });
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-rentr-dark">Agent Dashboard</h1>
-          <p className="text-slate-500">Welcome back, Agent Smith</p>
+          <p className="text-slate-500">Welcome back, {user.name}</p>
         </div>
         <button onClick={() => setCreateOpen(true)} className="bg-rentr-gold text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-orange-100 flex items-center gap-2 hover:bg-[#8e6b4d] transition-all">
           <Plus size={20} /> Post New Job
         </button>
       </div>
 
-      {/* QUICK STATS BANNER */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-rentr-dark text-white p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
@@ -100,7 +112,6 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
         </div>
       </div>
 
-      {/* SEARCH & FILTER BAR */}
       <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-3 text-slate-400" size={18} />
@@ -137,14 +148,14 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {openJobs.map(job => (
             <div key={job.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative group">
-              {/* EDIT BUTTON */}
-              <button 
-                onClick={() => setEditOpen({ open: true, job })}
-                className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rentr-gold hover:bg-rentr-light rounded-lg transition-colors"
-                title="Edit Job"
-              >
-                <Edit size={16} />
-              </button>
+              <div className="absolute top-4 right-4 flex gap-2">
+                <button onClick={() => setEditOpen({ open: true, job })} className="p-2 text-slate-300 hover:text-rentr-gold hover:bg-rentr-light rounded-lg transition-colors" title="Edit Job">
+                  <Edit size={16} />
+                </button>
+                <button onClick={() => setDeleteModal({ open: true, jobId: job.id })} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Job">
+                  <Trash2 size={16} />
+                </button>
+              </div>
 
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-rentr-light rounded-xl">{getJobIcon(job.type)}</div>
@@ -152,7 +163,6 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
               <h3 className="font-bold text-lg text-rentr-dark mb-2 pr-8">{job.title}</h3>
               <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">{job.description}</p>
               
-              {/* BUDGET DISPLAY */}
               <div className="flex items-center gap-1 font-bold text-slate-800 mb-4">
                  <span className="text-xs text-slate-400 font-normal uppercase mr-1">Budget:</span>
                  <DollarSign size={16} className="text-green-600"/> {job.budget}
@@ -162,12 +172,12 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-xs font-bold text-slate-400 uppercase">Applicants</span>
                   <span className={`px-2 py-0.5 rounded text-xs font-bold shadow-sm ${
-                    job.applicants.length > 0 ? 'bg-rentr-gold text-white' : 'bg-white text-slate-500'
+                    job.applicants && job.applicants.length > 0 ? 'bg-rentr-gold text-white' : 'bg-white text-slate-500'
                   }`}>
-                    {job.applicants.length}
+                    {job.applicants ? job.applicants.length : 0}
                   </span>
                 </div>
-                {job.applicants.length > 0 ? (
+                {job.applicants && job.applicants.length > 0 ? (
                    <button onClick={() => setSelectedJob(job)} className="w-full py-2 bg-rentr-dark text-white rounded-lg text-sm font-medium hover:bg-[#0a2024] flex items-center justify-center gap-2">
                      <Bell size={14} className="animate-pulse"/> Review Proposals
                    </button>
@@ -179,10 +189,10 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
         </div>
       </section>
 
-      {/* MODALS */}
       <CreateJobModal isOpen={isCreateOpen} onClose={() => setCreateOpen(false)} onJobCreated={() => { setCreateOpen(false); refreshJobs(); }} />
       <EditJobModal isOpen={isEditOpen.open} job={isEditOpen.job} onClose={() => setEditOpen({ open: false, job: null })} onJobUpdated={refreshJobs} />
-      <ConfirmationModal isOpen={confirmAssign.open} title="Confirm Assignment" message={`Are you sure you want to hire ${confirmAssign.applicant?.name}? This will notify the contractor.`} onConfirm={executeAssign} onCancel={() => setConfirmAssign({ open: false, job: null, applicant: null })} confirmText="Hire Contractor" />
+      <ConfirmationModal isOpen={confirmAssign.open} title="Confirm Assignment" message={`Hire ${confirmAssign.applicant?.name}?`} onConfirm={executeAssign} onCancel={() => setConfirmAssign({ open: false, job: null, applicant: null })} confirmText="Hire" />
+      <ConfirmationModal isOpen={deleteModal.open} title="Delete Job Listing" message="Are you sure you want to delete this job? This cannot be undone." onConfirm={executeDelete} onCancel={() => setDeleteModal({ open: false, jobId: null })} confirmText="Delete" />
 
       {selectedJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-rentr-dark/50 backdrop-blur-sm p-4 animate-fade-in">
@@ -195,7 +205,7 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
                {selectedJob.applicants.map(app => (
                  <div key={app.id} className="border border-slate-100 p-4 rounded-xl flex justify-between items-center hover:bg-rentr-light transition-colors group">
                    <div>
-                     <Link to={`/profile/${app.contractorId}`} className="font-bold text-lg text-rentr-dark group-hover:text-rentr-gold transition-colors hover:underline flex items-center gap-2">
+                     <Link to={`/profile/${app.contractor_id}`} className="font-bold text-lg text-rentr-dark group-hover:text-rentr-gold transition-colors hover:underline flex items-center gap-2">
                        {app.name} <span className="text-xs bg-rentr-light text-slate-500 px-2 py-0.5 rounded-full no-underline">View Profile</span>
                      </Link>
                      <p className="text-slate-600 text-sm mt-1 italic">"{app.proposal}"</p>
@@ -219,22 +229,33 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   const [applyModal, setApplyModal] = useState({ open: false, job: null });
   const [invoiceModal, setInvoiceModal] = useState({ open: false, job: null });
   const [confirmAction, setConfirmAction] = useState({ open: false, type: '', job: null });
-  
-  // SUCCESS MODAL STATE
   const [successModal, setSuccessModal] = useState({ open: false, message: '' });
+  
+  // Custom error modal
+  const [errorModal, setErrorModal] = useState({ open: false, message: '' });
 
   const [searchTerm, setSearchTerm] = useState(''); 
   const { user } = useAuth();
 
   const submitApplication = async (jobId, data) => {
-    await fetch(`${API_URL}/api/jobs/${jobId}/apply`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, contractorName: user.name }) 
-    });
-    refreshJobs();
-    // SHOW SUCCESS MODAL INSTEAD OF ALERT
-    setSuccessModal({ open: true, message: "Your application has been sent to the agent successfully." });
+    try {
+      const response = await fetch(`${API_URL}/api/jobs/${jobId}/apply`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, contractorName: user.name }) 
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Failed to apply");
+      }
+      
+      refreshJobs();
+      setSuccessModal({ open: true, message: "Your application has been sent to the agent successfully." });
+    } catch (error) {
+      console.error("Application Error:", error);
+      setErrorModal({ open: true, message: "Could not apply: " + error.message });
+    }
   };
 
   const executeStatusUpdate = async () => {
@@ -257,12 +278,14 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
     });
     refreshJobs();
     setInvoiceModal({ open: false, job: null }); 
-    // SHOW SUCCESS MODAL
     setSuccessModal({ open: true, message: "Invoice submitted successfully!" });
   };
 
-  const myJobs = jobs.filter(j => j.assignedTo === user.name); 
-  const availableJobs = jobs.filter(j => j.status === 'Open' && !j.applicants.some(a => a.name === user.name))
+  // --- FIX IS HERE: assignedTo -> assigned_to ---
+  // The Backend sends 'assigned_to' (snake_case), not 'assignedTo'
+  const myJobs = jobs.filter(j => j.assigned_to === user.name); 
+  
+  const availableJobs = jobs.filter(j => j.status === 'Open' && !j.applicants?.some(a => a.name === user.name))
                             .filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
@@ -305,6 +328,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
                 </div>
              </div>
           ))}
+          {myJobs.length === 0 && <p className="col-span-3 text-center text-slate-400 py-10">No active projects yet.</p>}
         </div>
       </section>
 
@@ -329,8 +353,6 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
                   <DollarSign size={16} className="text-green-600"/> {job.budget}
                 </div>
               </div>
-              
-              {/* APPLY BUTTON */}
               <button 
                 onClick={() => setApplyModal({ open: true, job })}
                 className="w-full bg-rentr-light text-rentr-dark font-bold py-2 rounded-xl border border-slate-200 hover:bg-rentr-gold hover:text-white hover:border-rentr-gold transition-all shadow-sm"
@@ -346,7 +368,6 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
       <InvoiceModal isOpen={invoiceModal.open} job={invoiceModal.job} onClose={() => setInvoiceModal({ open: false, job: null })} onSubmit={submitInvoice} />
       <ConfirmationModal isOpen={confirmAction.open} title={confirmAction.type === 'start' ? "Start Project" : "Complete Project"} message="Are you sure?" onConfirm={executeStatusUpdate} onCancel={() => setConfirmAction({ open: false, type: '', job: null })} confirmText="Confirm" />
       
-      {/* SUCCESS MODAL */}
       <ConfirmationModal 
         isOpen={successModal.open} 
         title="Success" 
@@ -354,6 +375,15 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
         onConfirm={() => setSuccessModal({ open: false, message: '' })} 
         onCancel={() => setSuccessModal({ open: false, message: '' })} 
         confirmText="OK"
+      />
+
+      <ConfirmationModal 
+        isOpen={errorModal.open} 
+        title="Application Failed" 
+        message={errorModal.message} 
+        onConfirm={() => setErrorModal({ open: false, message: '' })} 
+        onCancel={() => setErrorModal({ open: false, message: '' })} 
+        confirmText="Close"
       />
     </div>
   );
@@ -379,7 +409,7 @@ const DashboardLayout = ({ children }) => {
             <LayoutDashboard size={20} /> Dashboard
           </Link>
           
-          <Link to="/profile/101" className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname.includes('/profile') ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
+          <Link to={`/profile/${user.id}`} className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname.includes('/profile') ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
             <User size={20} /> My Profile
           </Link>
           
@@ -407,7 +437,13 @@ const DashboardLayout = ({ children }) => {
 
 function App() {
   const [jobs, setJobs] = useState([]);
-  const fetchJobs = () => { fetch('${API_URL}/api/jobs').then(res => res.json()).then(setJobs); };
+
+  const fetchJobs = () => { 
+    fetch(`${API_URL}/api/jobs`)
+      .then(res => res.json())
+      .then(setJobs)
+      .catch(err => console.error("API Fetch Error:", err)); 
+  };
   
   useEffect(() => { 
     fetchJobs(); 
@@ -422,7 +458,6 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<DashboardLayout><DashboardHomeWrapper jobs={jobs} refreshJobs={fetchJobs} /></DashboardLayout>} />
           <Route path="/profile/:id" element={<DashboardLayout><Profile /></DashboardLayout>} />
-          {/* UPDATED ROUTE for JobManagement */}
           <Route path="/job-management" element={<DashboardLayout><JobManagement jobs={jobs} refreshJobs={fetchJobs} /></DashboardLayout>} />
         </Routes>
       </BrowserRouter>

@@ -4,10 +4,13 @@ import API_URL from '../config';
 
 const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
   const [loading, setLoading] = useState(false);
+  
+  // 1. Updated State to match Backend Schema
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    cost: ''
+    type: 'General', // Default value (Backend requires this)
+    budget: ''       // Renamed from 'cost' to 'budget'
   });
 
   if (!isOpen) return null;
@@ -17,23 +20,33 @@ const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
     setLoading(true);
 
     try {
-      // Simulate network delay for realism
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 2. Prepare Data: Convert 'budget' to Number
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        budget: parseInt(formData.budget) || 0 // Force conversion to Integer
+      };
 
-      const response = await fetch('${API_URL}/api/jobs', {
+      const response = await fetch(`${API_URL}/api/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload) // Send the fixed payload
       });
 
       if (response.ok) {
         const newJob = await response.json();
         onJobCreated(newJob);
-        setFormData({ title: '', description: '', cost: '' }); // Reset form
+        setFormData({ title: '', description: '', type: 'General', budget: '' }); // Reset
         onClose();
+      } else {
+        // Handle server errors (like 422)
+        const errorData = await response.json();
+        alert(`Error: ${JSON.stringify(errorData)}`);
       }
     } catch (error) {
       console.error('Failed to create job', error);
+      alert("Failed to connect to server.");
     } finally {
       setLoading(false);
     }
@@ -68,6 +81,22 @@ const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
             />
           </div>
 
+          {/* New Field: Type Selector */}
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Category</label>
+            <select
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-rentr-gold bg-white"
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+            >
+              <option value="General">General</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Plumbing">Plumbing</option>
+              <option value="HVAC">HVAC</option>
+              <option value="Carpentry">Carpentry</option>
+            </select>
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Description</label>
             <textarea
@@ -81,14 +110,14 @@ const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Estimated Cost ($)</label>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Estimated Budget ($)</label>
             <input
               required
               type="number"
               placeholder="150"
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-rentr-gold transition-all"
-              value={formData.cost}
-              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              value={formData.budget}
+              onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
             />
           </div>
 
