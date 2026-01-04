@@ -1,4 +1,5 @@
 // src/config.js
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Hardcoding the URL ensures it works immediately
+const API_URL = "https://rentr-api.onrender.com"; 
 
 export default API_URL;
