@@ -1,10 +1,9 @@
-// // src/config.js
- //Hardcoding the URL ensures it works immediately
-const API_URL = "https://rentr-api.onrender.com"; 
+// src/config.js
+
+// If we are on localhost, use the local backend.
+// If we are on Vercel (production), use the Render backend.
+const API_URL = window.location.hostname === 'localhost' 
+  ? "http://localhost:8000" 
+  : "https://rentr-api.onrender.com"; // <--- MAKE SURE THIS MATCHES YOUR RENDER URL EXACTLY
 
 export default API_URL;
-// // src/config.js
-// const API_URL = "http://localhost:8000"; // <--- SWITCH TO THIS FOR LOCAL TESTING
-// // const API_URL = "https://rentr-api.onrender.com"; 
-
-// export default API_URL;
