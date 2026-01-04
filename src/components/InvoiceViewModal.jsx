@@ -2,7 +2,6 @@ import React from 'react';
 import html2pdf from 'html2pdf.js';
 import { X, Download } from 'lucide-react';
 import logo from '../assets/logo.png'; // <--- Logo Import
-import API_URL from '../config';
 
 const InvoiceViewModal = ({ isOpen, onClose, job, onPay, isAgent }) => {
   if (!isOpen || !job || !job.invoice) return null;
