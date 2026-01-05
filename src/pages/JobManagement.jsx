@@ -15,7 +15,7 @@ const JobManagement = ({ jobs, refreshJobs }) => {
     .filter(j => j.status !== 'Open' || j.applicants.length > 0) 
     .filter(j => 
       j.title.toLowerCase().includes(search.toLowerCase()) || 
-      j.assignedTo?.toLowerCase().includes(search.toLowerCase())
+      j.assigned_to?.toLowerCase().includes(search.toLowerCase())
     )
     .filter(j => statusFilter === 'All' || j.status === statusFilter);
 
@@ -89,9 +89,9 @@ const JobManagement = ({ jobs, refreshJobs }) => {
                     
                     {/* Contractor Column */}
                     <td className="p-4">
-                      {job.assignedTo ? (
+                      {job.assigned_to ? (
                         <Link to="/profile/101" className="text-rentr-gold hover:underline font-medium">
-                          {job.assignedTo}
+                          {job.assigned_to}
                         </Link>
                       ) : (
                         <span className="text-slate-400 italic text-sm">Not Assigned</span>
