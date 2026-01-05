@@ -17,7 +17,7 @@ class Applicant(ApplicantBase):
     contractor_id: Optional[int] = 101 # Allow this field to be read
 
     class Config:
-        orm_mode = True  # Or 'from_attributes = True' if you see Pydantic V2 warnings
+        from_attributes = True  # Or 'from_attributes = True' if you see Pydantic V2 warnings
 
 # --- Invoice ---
 class InvoiceBase(BaseModel):
