@@ -9,8 +9,8 @@ const CreateJobModal = ({ isOpen, onClose, onJobCreated }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'General', // Default value (Backend requires this)
-    budget: ''       // Renamed from 'cost' to 'budget'
+    type: 'General', 
+    budget: ''       
   });
 
   if (!isOpen) return null;

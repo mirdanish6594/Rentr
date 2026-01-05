@@ -11,12 +11,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- CRITICAL FIX: RESET DATABASE ---
-# This deletes old tables so new ones with 'contractor_id' can be created.
-# You can remove this line later if you want to keep data between restarts.
-models.Base.metadata.drop_all(bind=database.engine)
-
-# Create tables (now with correct columns)
+# It only creates tables if they don't exist yet.
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
@@ -50,7 +45,6 @@ class ApplicationSchema(BaseModel):
     contractorName: str
 
 # --- ROUTES ---
-
 @app.get("/api/jobs", response_model=List[schemas.Job])
 def get_jobs(db: Session = Depends(get_db)):
     # joinedload ensures applicants are fetched with the job
@@ -97,7 +91,7 @@ def apply_for_job(job_id: int, data: ApplicationSchema, db: Session = Depends(ge
         new_applicant = models.Applicant(
             job_id=job_id,
             name=data.contractorName, 
-            contractor_id=101,  # Now valid because table was recreated
+            contractor_id=101,  
             bid=bid_amount,
             proposal=data.proposal,
             date=datetime.now().strftime("%Y-%m-%d")

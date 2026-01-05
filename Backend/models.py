@@ -20,10 +20,7 @@ class Applicant(Base):
     __tablename__ = "applicants"
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(Integer, ForeignKey("jobs.id"))
-    
-    # --- ADDED THIS COLUMN ---
     contractor_id = Column(Integer) 
-    
     name = Column(String)
     bid = Column(Integer)
     proposal = Column(String)
@@ -38,5 +35,4 @@ class Invoice(Base):
     amount = Column(Integer)
     notes = Column(String)
     date = Column(String)
-    
     job = relationship("Job", back_populates="invoice")

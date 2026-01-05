@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LayoutDashboard, LogOut, Plus, Users, CheckCircle, Play, DollarSign, Clock, Wrench, Zap, Hammer, Wind, AlertCircle, FileText, User, Edit, Search, Filter, Briefcase, Bell, Trash2 } from 'lucide-react';
+import { LayoutDashboard, LogOut, Plus, Users, CheckCircle, Play, DollarSign, Clock, Wrench, Zap, Hammer, Wind, AlertCircle, FileText, User, Edit, Search, Filter, Briefcase, Bell, Trash2, Menu, X } from 'lucide-react';
 import logo from './assets/logo.png';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
@@ -69,12 +69,12 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-rentr-dark">Agent Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-rentr-dark">Agent Dashboard</h1>
           <p className="text-slate-500">Welcome back, {user.name}</p>
         </div>
-        <button onClick={() => setCreateOpen(true)} className="bg-rentr-gold text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-orange-100 flex items-center gap-2 hover:bg-[#8e6b4d] transition-all">
+        <button onClick={() => setCreateOpen(true)} className="w-full md:w-auto bg-rentr-gold text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-orange-100 flex items-center justify-center gap-2 hover:bg-[#8e6b4d] transition-all">
           <Plus size={20} /> Post New Job
         </button>
       </div>
@@ -127,7 +127,7 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Filter size={18} className="text-slate-500" />
           <select 
-            className="bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-rentr-gold cursor-pointer"
+            className="bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-rentr-gold cursor-pointer w-full"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
           >
@@ -195,24 +195,24 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
       <ConfirmationModal isOpen={deleteModal.open} title="Delete Job Listing" message="Are you sure you want to delete this job? This cannot be undone." onConfirm={executeDelete} onCancel={() => setDeleteModal({ open: false, jobId: null })} confirmText="Delete" />
 
       {selectedJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-rentr-dark/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-6 animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-rentr-dark/50 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-6 animate-slide-up m-4">
              <div className="flex justify-between mb-6">
                <h2 className="text-xl font-bold text-rentr-dark">Proposals for: <span className="text-rentr-gold">{selectedJob.title}</span></h2>
                <button onClick={() => setSelectedJob(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">Close</button>
              </div>
              <div className="space-y-3">
                {selectedJob.applicants.map(app => (
-                 <div key={app.id} className="border border-slate-100 p-4 rounded-xl flex justify-between items-center hover:bg-rentr-light transition-colors group">
+                 <div key={app.id} className="border border-slate-100 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-rentr-light transition-colors group gap-4">
                    <div>
                      <Link to={`/profile/${app.contractor_id}`} className="font-bold text-lg text-rentr-dark group-hover:text-rentr-gold transition-colors hover:underline flex items-center gap-2">
-                       {app.name} <span className="text-xs bg-rentr-light text-slate-500 px-2 py-0.5 rounded-full no-underline">View Profile</span>
+                       {app.name} <span className="text-xs bg-rentr-light text-slate-500 px-2 py-0.5 rounded-full no-underline whitespace-nowrap">View Profile</span>
                      </Link>
                      <p className="text-slate-600 text-sm mt-1 italic">"{app.proposal}"</p>
                    </div>
-                   <div className="text-right">
+                   <div className="text-left sm:text-right w-full sm:w-auto">
                      <div className="text-xl font-bold text-green-600 mb-2">${app.bid}</div>
-                     <button onClick={() => { setConfirmAssign({ open: true, job: selectedJob, applicant: app }); setSelectedJob(null); }} className="bg-rentr-dark text-white px-5 py-2 rounded-lg text-sm font-bold shadow hover:bg-rentr-gold transition-colors">Hire</button>
+                     <button onClick={() => { setConfirmAssign({ open: true, job: selectedJob, applicant: app }); setSelectedJob(null); }} className="w-full sm:w-auto bg-rentr-dark text-white px-5 py-2 rounded-lg text-sm font-bold shadow hover:bg-rentr-gold transition-colors">Hire</button>
                    </div>
                  </div>
                ))}
@@ -231,7 +231,6 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   const [confirmAction, setConfirmAction] = useState({ open: false, type: '', job: null });
   const [successModal, setSuccessModal] = useState({ open: false, message: '' });
   
-  // Custom error modal
   const [errorModal, setErrorModal] = useState({ open: false, message: '' });
 
   const [searchTerm, setSearchTerm] = useState(''); 
@@ -281,8 +280,6 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
     setSuccessModal({ open: true, message: "Invoice submitted successfully!" });
   };
 
-  // --- FIX IS HERE: assignedTo -> assigned_to ---
-  // The Backend sends 'assigned_to' (snake_case), not 'assignedTo'
   const myJobs = jobs.filter(j => j.assigned_to === user.name); 
   
   const availableJobs = jobs.filter(j => j.status === 'Open' && !j.applicants?.some(a => a.name === user.name))
@@ -290,9 +287,9 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
          <div>
-            <h1 className="text-3xl font-bold text-rentr-dark">Contractor Hub</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-rentr-dark">Contractor Hub</h1>
             <p className="text-slate-500">Welcome back, {user.name}</p>
          </div>
          <div className="bg-rentr-light px-4 py-2 rounded-lg">
@@ -333,11 +330,11 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
       </section>
 
       <section className="pt-8 border-t border-slate-200">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Play className="text-rentr-gold"/> New Opportunities</h2>
-          <div className="relative">
+          <div className="relative w-full md:w-auto">
              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-             <input type="text" placeholder="Search..." className="pl-9 pr-4 py-2 border rounded-lg text-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+             <input type="text" placeholder="Search..." className="w-full md:w-auto pl-9 pr-4 py-2 border rounded-lg text-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -389,36 +386,69 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   );
 };
 
-// --- APP & LAYOUT ---
+// --- APP & LAYOUT (RESPONSIVE SIDEBAR) ---
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation(); 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   if (!user) return <Navigate to="/" />;
 
   return (
     <div className="min-h-screen bg-rentr-light flex">
-      <aside className="w-64 bg-rentr-dark border-r border-slate-800 flex flex-col fixed h-full z-10 text-white">
-        <div className="p-6 border-b border-slate-700">
+      {/* Mobile Menu Button */}
+      <div className="md:hidden fixed top-0 left-0 w-full bg-rentr-dark text-white z-50 p-4 flex justify-between items-center shadow-md">
+        <img src={logo} alt="Rentr Logo" className="h-8 w-auto brightness-0 invert" />
+        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Sidebar - Hidden on mobile unless opened */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 w-64 bg-rentr-dark border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:h-screen
+      `}>
+        <div className="p-6 border-b border-slate-700 hidden md:block">
           <div className="flex items-center gap-2 mb-2">
              <img src={logo} alt="Rentr Logo" className="h-10 w-auto brightness-0 invert" />
           </div>
           <p className="text-xs text-slate-400 mt-2 uppercase tracking-wider pl-1">{user.role} workspace</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
-          <Link to="/dashboard" className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/dashboard' ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
+        
+        {/* Mobile Header in Sidebar */}
+        <div className="p-6 border-b border-slate-700 md:hidden mt-14">
+          <p className="text-xs text-slate-400 uppercase tracking-wider">{user.role} workspace</p>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <Link 
+            to="/dashboard" 
+            onClick={() => setSidebarOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/dashboard' ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+          >
             <LayoutDashboard size={20} /> Dashboard
           </Link>
           
-          <Link to={`/profile/${user.id}`} className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname.includes('/profile') ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
+          <Link 
+            to={`/profile/${user.id}`} 
+            onClick={() => setSidebarOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname.includes('/profile') ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+          >
             <User size={20} /> My Profile
           </Link>
           
           {user.role === 'agent' && (
-            <Link to="/job-management" className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/job-management' ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
+            <Link 
+              to="/job-management" 
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/job-management' ? 'bg-slate-800/50 text-rentr-gold border border-slate-700' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+            >
               <Briefcase size={20} /> Job Management
             </Link>
           )}
         </nav>
+
         <div className="p-4 border-t border-slate-700">
            <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-800 rounded-lg">
               <div className="w-8 h-8 rounded-full bg-rentr-gold flex items-center justify-center text-white font-bold text-xs">{user.name.charAt(0)}</div>
@@ -430,7 +460,19 @@ const DashboardLayout = ({ children }) => {
            <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2 text-red-400 text-sm font-medium hover:bg-slate-800 rounded-lg transition-colors"><LogOut size={16}/> Sign Out</button>
         </div>
       </aside>
-      <main className="flex-1 ml-64 p-8">{children}</main>
+
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 md:p-8 mt-16 md:mt-0 overflow-x-hidden">
+        {children}
+      </main>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };
