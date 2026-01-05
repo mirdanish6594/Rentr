@@ -68,7 +68,7 @@ const AgentDashboard = ({ jobs, refreshJobs }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-rentr-dark">Agent Dashboard</h1>
@@ -286,7 +286,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
                             .filter(j => j.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
          <div>
             <h1 className="text-2xl md:text-3xl font-bold text-rentr-dark">Contractor Hub</h1>
@@ -386,7 +386,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   );
 };
 
-// --- APP & LAYOUT (RESPONSIVE SIDEBAR FIXED) ---
+// --- APP & LAYOUT (FINAL FIX: CONTAINER-BASED SCROLLING) ---
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation(); 
@@ -395,19 +395,15 @@ const DashboardLayout = ({ children }) => {
   if (!user) return <Navigate to="/" />;
 
   return (
-    <div className="min-h-screen bg-rentr-light flex">
-      {/* Mobile Menu Button */}
-      <div className="md:hidden fixed top-0 left-0 w-full bg-rentr-dark text-white z-50 p-4 flex justify-between items-center shadow-md">
-        <img src={logo} alt="Rentr Logo" className="h-8 w-auto brightness-0 invert" />
-        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {/* Sidebar - Fixed for Desktop & Mobile */}
+    // 1. The Parent Container locks to Screen Height and hides Window Scrollbar
+    <div className="h-screen w-full bg-rentr-light flex overflow-hidden">
+      
+      {/* 2. Sidebar is part of the Flex container. It DOES NOT SCROLL. */}
+      {/* Mobile: Fixed overlay. Desktop: Static flex item */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-rentr-dark border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 md:static md:flex-shrink-0
       `}>
         <div className="p-6 border-b border-slate-700 hidden md:block">
           <div className="flex items-center gap-2 mb-2">
@@ -461,10 +457,22 @@ const DashboardLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main Content Area - Added margin-left for Desktop */}
-      <main className="flex-1 p-4 md:p-8 mt-16 md:mt-0 md:ml-64 transition-all">
-        {children}
-      </main>
+      {/* 3. Main Content: This takes the remaining space and HANDLES ITS OWN SCROLL */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        {/* Mobile Header (Fixed visually but inside flex container) */}
+        <div className="md:hidden w-full bg-rentr-dark text-white z-30 p-4 flex justify-between items-center shadow-md flex-shrink-0">
+          <img src={logo} alt="Rentr Logo" className="h-8 w-auto brightness-0 invert" />
+          <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Scrollable Area */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          {children}
+        </main>
+      </div>
 
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (
