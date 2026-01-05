@@ -386,7 +386,7 @@ const ContractorDashboard = ({ jobs, refreshJobs }) => {
   );
 };
 
-// --- APP & LAYOUT (RESPONSIVE SIDEBAR) ---
+// --- APP & LAYOUT (RESPONSIVE SIDEBAR FIXED) ---
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation(); 
@@ -404,10 +404,10 @@ const DashboardLayout = ({ children }) => {
         </button>
       </div>
 
-      {/* Sidebar - Hidden on mobile unless opened */}
+      {/* Sidebar - Fixed for Desktop & Mobile */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-rentr-dark border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:h-screen
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
       `}>
         <div className="p-6 border-b border-slate-700 hidden md:block">
           <div className="flex items-center gap-2 mb-2">
@@ -461,8 +461,8 @@ const DashboardLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 mt-16 md:mt-0 overflow-x-hidden">
+      {/* Main Content Area - Added margin-left for Desktop */}
+      <main className="flex-1 p-4 md:p-8 mt-16 md:mt-0 md:ml-64 transition-all">
         {children}
       </main>
 
